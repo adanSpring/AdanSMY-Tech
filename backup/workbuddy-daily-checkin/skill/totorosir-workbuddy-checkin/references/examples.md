@@ -237,7 +237,7 @@ python "%USERPROFILE%/.workbuddy/scripts/workbuddy_checkin.py" --version        
 ```bash
 push_message.py --ready                              # 只列出已就绪/未配置渠道（只读，不发送）
 push_message.py --title "测试" --content "hello"      # 发全部已配置渠道
-push_message.py --title T --content C --channels system   # 只发系统通知（零配置、离线可测，不联网）
+push_message.py --title T --content C --channels system   # 只发系统通知（零配置，离线可测，不联网）
 workbuddy_checkin.py --push-channels dingtalk,email  # 本次仅推这两个渠道
 workbuddy_checkin.py --confirm-paid                  # 放行付费渠道（短信）
 ```
