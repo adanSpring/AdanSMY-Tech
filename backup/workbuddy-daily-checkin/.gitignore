@@ -1,0 +1,6 @@
+# 凭据与运行产物，永不入库
+notify_config.json
+checkin.log
+notifications.jsonl
+workbuddy-desktop.info
+*.info
