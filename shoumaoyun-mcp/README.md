@@ -17,7 +17,8 @@
 ```
 .
 ├── src/
-│   └── entry.py           # ⭐ Worker 唯一入口（自动拼装产物，别手改）
+│   ├── README.md          # 说明 src/entry.py 为什么不入库
+│   └── entry.py           # ⭐ Worker 唯一入口（自动拼装产物，别手改，已 gitignore）
 ├── tools/
 │   ├── port_from_stdio.py # stdio 版 → Workers 版的移植器
 │   ├── _worker_glue.py    # HTTP/MCP 粘合层源码（被拼进 entry.py）
@@ -27,8 +28,9 @@
 └── .dev.vars.example      # 本地凭证模板（复制为 .dev.vars，已 gitignore）
 ```
 
-> `src/yzj_core.py`（工具核心逻辑，async 版）是移植脚本的中间产物，会被整体拼进
-> `src/entry.py`，因此已 gitignore；想单独阅读它，跑一次 `tools/port_from_stdio.py` 就会生成。
+> ⚠️ `src/yzj_core.py` 和 `src/entry.py` 都是**生成产物，不入库**（已 gitignore）。
+> 克隆后必须先跑一次 `python3 tools/port_from_stdio.py` 生成它们，否则 `pywrangler deploy`
+> 会报找不到 `src/entry.py`。详见 `src/README.md`。
 
 ## 2. 代码是怎么来的（重要）
 
@@ -55,7 +57,8 @@ python3 tools/smoke_local.py         # 冒烟
 （会真实请求云之家网关）。
 
 ```bash
-cp .dev.vars.example .dev.vars   # 填好 YZJ_EID / YZJ_RES_SECRET
+python3 tools/port_from_stdio.py            # 先生成 src/entry.py
+cp .dev.vars.example .dev.vars              # 填好 YZJ_EID / YZJ_RES_SECRET
 python3 tools/smoke_local.py --env-file .dev.vars
 # 或直接用本机 ~/.workbuddy/mcp.json 里的凭证：
 python3 tools/smoke_local.py
