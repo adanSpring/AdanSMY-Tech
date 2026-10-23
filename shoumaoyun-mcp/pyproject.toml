@@ -1,0 +1,10 @@
+[project]
+name = "shoumaoyun-mcp"
+version = "1.0.0"
+description = "首茂云（云之家）MCP Server —— Cloudflare Python Workers 版"
+requires-python = ">=3.12"
+# 零第三方依赖：只用标准库 + workers 内置模块
+dependencies = []
+
+[tool.uv]
+package = false

@@ -1,0 +1,29 @@
+# 复制为 .dev.vars 后填真实值；.dev.vars 已被 .gitignore 忽略，不会进仓库。
+# 生产环境请用 `npx wrangler secret put <KEY>` 逐个写入。
+
+# ---- 必填 ----
+YZJ_EID=27301064
+YZJ_RES_SECRET=
+
+# ---- 可选：群组接口（不填则回退 YZJ_RES_SECRET）----
+YZJ_IM_SECRET=
+YZJ_IM_CURRENT_UID=
+
+# ---- 可选：群机器人，格式 名称=URL|名称=URL ----
+YZJ_ROBOT_WEBHOOKS=
+
+# ---- 可选：智能审批（team 级，填了才会注册 yzj_find_flows 等 4 个工具）----
+YZJ_APPROVAL_APP_ID=
+YZJ_APPROVAL_EID=
+YZJ_APPROVAL_SECRET=
+
+# ---- 可选：待办（app 级，填了才会注册 yzj_create_todo 等 3 个工具）----
+YZJ_APP_ID=
+YZJ_APP_SECRET=
+
+# ---- 可选：公共号单聊 ----
+YZJ_PUB_ID=
+YZJ_PUB_SECRET=
+
+# ---- MCP 访问令牌（强烈建议设置；不设则不鉴权，任何人可调用）----
+MCP_TOKEN=

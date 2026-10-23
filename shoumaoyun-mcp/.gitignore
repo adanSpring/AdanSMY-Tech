@@ -1,0 +1,12 @@
+.dev.vars
+.wrangler/
+# src/yzj_core.py 是移植脚本的中间产物（会被拼进 src/entry.py），不入库
+src/yzj_core.py
+# reference/server_stdio.py 是原始 stdio 版留档，体积大且不参与部署，不入库
+reference/
+dist/
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+node_modules/

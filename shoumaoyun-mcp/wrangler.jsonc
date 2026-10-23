@@ -1,0 +1,12 @@
+{
+  // Worker 名决定默认域名：https://shoumaoyun-mcp.<你的子域>.workers.dev
+  "name": "shoumaoyun-mcp",
+  "main": "src/entry.py",
+
+  // Python Workers 于 2026-09-21 GA；compatibility_date 不能早于该日期
+  "compatibility_date": "2026-09-25",
+  "compatibility_flags": ["python_workers"],
+
+  // 非敏感配置放这里；密钥一律用 `npx wrangler secret put XXX`（见 README）
+  "vars": {}
+}
