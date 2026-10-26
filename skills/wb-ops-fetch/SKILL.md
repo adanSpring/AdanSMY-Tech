@@ -33,10 +33,19 @@ description: 通过 WorkBuddy 企业 OpenAPI（pt_ Key，纯后台 HTTP）抓取
 - `python3 scripts/wb_openapi_fetch.py --compare` —— 与旧 bsk 数据对比验证（落 `wb_openapi_compare.txt`）。
 
 ## 安装
+本技能位于仓库 `adanSpring/AdanSMY-Tech` 的 **`skills/wb-ops-fetch/`** 子目录：
+
 ```bash
-# 克隆到用户级技能目录
-git clone <本仓库地址> ~/.workbuddy/skills/wb-ops-fetch
-# 放好企业 Key（600 权限）
+# 1) 取技能包：稀疏检出，只拉该子目录（推荐）
+git clone --depth 1 --filter=blob:none --sparse https://github.com/adanSpring/AdanSMY-Tech.git /tmp/adansmy-tech
+cd /tmp/adansmy-tech && git sparse-checkout set skills/wb-ops-fetch
+cp -R skills/wb-ops-fetch ~/.workbuddy/skills/wb-ops-fetch
+
+# 若不想用 sparse：整仓 clone 后拷目录亦可
+#   git clone https://github.com/adanSpring/AdanSMY-Tech.git /tmp/adansmy-tech
+#   cp -R /tmp/adansmy-tech/skills/wb-ops-fetch ~/.workbuddy/skills/
+
+# 2) 放好企业 Key（600 权限；运行时从此处读取，不入库）
 mkdir -p ~/.workbuddy && install -m 600 <你的 pt_ Key 文件> ~/.workbuddy/wb_openapi.key
 ```
 
