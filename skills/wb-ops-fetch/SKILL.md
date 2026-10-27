@@ -24,6 +24,11 @@ description: 通过 WorkBuddy 企业 OpenAPI（pt_ Key，纯后台 HTTP）抓取
   - `POST /openapi/usage/members/detail`（**version:2**，timeRange≤31 天，nextPageToken 翻页，含 departmentInfo.fullPath）
 - ⚠️ 每日用量**不能**靠 members/query 切片（它永远返回周期总量）；必须靠 members/detail 按 usageTime 聚合。
 - ⚠️ 成员含系统账号 `service-account-*`，需剔除。
+- ⚠️⭐ **「未启用」口径**：= 周期积分 0 **且无任何请求记录**。**不能只看积分**——
+  `hy3` / `step-5-preview` 等模型完全免费不扣积分，只用免费模型的人 requests>0 但 credit=0，
+  按积分判会被误判成未启用（真实案例：李鑫 10 条请求全 hy3）。
+  `build_data()` 已拉全量 detail，用 `detail_req_days()` 统计每人请求数即可甄别，无需额外请求。
+  detail 游标可能漏记个别轻量成员 → 「有请求」可放心用于**排除**，「无请求」仍作兜底。
 
 ## 用法
 技能脚本在 `scripts/`：

@@ -175,6 +175,28 @@ def detail_daily(recs):
     return out
 
 
+def detail_req_days(recs):
+    """按人统计「请求记录」：{name:{"cnt":请求条数, "days":{活跃日}, "last":最近活跃日}}。
+
+    用途：甄别「零积分但有请求」的成员——hy3 / step-5-preview 等完全免费的模型
+    不扣积分，只用免费模型的人 totalUsed=0 但确实在用，不能算「未启用」。
+    注意：detail 游标分页可能漏记个别轻量成员，故「有请求」可放心用于排除，
+    「无请求」仍只是兜底（见 unused_summary）。"""
+    out = {}
+    for it in recs:
+        nm = it.get("userName") or ""
+        day = (it.get("usageTime") or "")[:10]
+        if not nm:
+            continue
+        r = out.setdefault(nm, {"cnt": 0, "days": set(), "last": ""})
+        r["cnt"] += 1
+        if day:
+            r["days"].add(day)
+            if day > r["last"]:
+                r["last"] = day
+    return out
+
+
 def detail_dept(recs):
     """从 detail 记录建 userName->fullPath 与 departmentId->fullPath。"""
     user_fp, dept_fp = {}, {}
@@ -258,6 +280,7 @@ def build_data():
     print("    detail 记录 %d 条" % len(recs))
     user_fp, dept_fp = detail_dept(recs)
     api_daily = detail_daily(recs)
+    req_days = detail_req_days(recs)     # 每人请求记录（甄别免费模型用户）
 
     qby = fetch_query(ids, tr_cycle)
     allm = []
@@ -277,7 +300,10 @@ def build_data():
     over = [{"name": m["n"], "used": m["u"], "limit": per, "ownLimit": m["l"]}
             for m in allm if m["u"] >= per]
     over.sort(key=lambda x: -x["used"])
-    idle = [m["n"] for m in allm if m["u"] == 0]
+    # 零用量名单：周期积分 0 **且无任何请求记录**（hy3/step-5-preview 等免费模型不扣积分，
+    # 只用免费模型的人 requests>0 但 credit=0，不能算未启用）
+    idle = [m["n"] for m in allm
+            if m["u"] == 0 and not (req_days.get(m["n"]) or {}).get("cnt")]
     total_sum = round(sum(m["u"] for m in allm), 2)
     mx = max((m["u"] for m in allm), default=0)
     who = next((m["n"] for m in allm if m["u"] == mx), "")
@@ -297,8 +323,8 @@ def build_data():
     print("  已落盘 %s（共 %d 天）" % (os.path.basename(HIST), len(hist["days"])))
     data["daily"] = daily_summary(hist, today)
 
-    # 5) 未启用三档（never=周期累计0；stalled/todayOnly 由每日 m 得）
-    data["unused3"] = unused_summary(hist, data, today)
+    # 5) 未启用三档（never=周期累计0且无请求记录；stalled/todayOnly 由每日 m 得）
+    data["unused3"] = unused_summary(hist, data, today, req_days)
 
     # 6) 角色（OpenAPI 暂无对应只读接口 → 置空，页面保留上次值）
     data["roles"] = {}
@@ -345,7 +371,16 @@ def daily_summary(hist, today):
     return {"days": rows, "avg7": round(avg7, 1), "sum": round(tot, 1),
             "peak": peak, "lastFull": prev, "have": len(keys), "today": today}
 
-def unused_summary(hist, data, today):
+def unused_summary(hist, data, today, req_days=None):
+    """未启用三档。
+
+    ⚠️ 口径修正（2026-10-27）：「未启用」= 周期积分 0 **且无任何请求记录**。
+    原因：hy3 / step-5-preview 等模型完全免费不扣积分，只用免费模型的人
+    totalUsed=0 但确实在用（如李鑫 10 条请求全 hy3），旧口径会误判为未启用。
+    req_days 来自 members/detail 全量记录，已含免费模型请求，无需额外请求。
+    detail 游标可能漏记个别轻量成员 → 「有请求」可放心排除，「无请求」仍作兜底。
+    """
+    req_days = req_days or {}
     allm = (data.get("usage") or {}).get("all") or []
     if not allm or not hist.get("days"):
         return None
@@ -361,14 +396,20 @@ def unused_summary(hist, data, today):
         n = r.get("n") or ""
         if not n:
             continue
-        used = [k for k in last3 if (hist["days"].get(k, {}).get("m") or {}).get(n)]
+        rq = req_days.get(n) or {}
+        reqd = rq.get("days") or set()
+        # 近三天活跃：有积分消耗 **或** 有请求记录（免费模型也算在用）
+        used = [k for k in last3
+                if (hist["days"].get(k, {}).get("m") or {}).get(n) or k in reqd]
         lu = lastuse.get(n, "")
+        if rq.get("last", "") > lu:
+            lu = rq["last"]
         if used:
             if last3[0] not in used:
                 today_only.append(n)
             continue
         rec = {"n": n, "d": r.get("d") or "", "s": r.get("s") or "", "u": r.get("u") or 0,
-               "l": r.get("l") or 0, "last": lu,
+               "l": r.get("l") or 0, "last": lu, "req": rq.get("cnt") or 0,
                "gap": (t - datetime.strptime(lu, "%Y-%m-%d")).days if lu else None}
         (never if not lu else stalled).append(rec)
     never.sort(key=lambda x: (x["d"], x["s"]))

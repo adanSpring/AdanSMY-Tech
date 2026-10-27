@@ -4,7 +4,9 @@
 
 抓六项：席位剩余 / 总积分使用 / 积分超限人员 / 未启用人员 / 成员角色配置 / 每日用量统计。
 
-「未启用人员」= 已分配席位、但本周期 totalUsed = 0 的成员（与「席位剩余」= 未分配的空闲席位不重叠）。
+「未启用人员」= 已分配席位、本周期 totalUsed = 0 且无任何请求记录的成员
+（与「席位剩余」= 未分配的空闲席位不重叠）。注意 hy3 / step-5-preview 等免费模型不扣积分，
+只用免费模型的人有请求但积分为 0，不算未启用。
 依赖：企业 OpenAPI（pt_ Key，见 ~/.workbuddy/wb_openapi.key），纯后台 HTTP，无需浏览器登录态。
 
 每日用量：usage/member/list 支持任意 timeRange，按天查询即得当日消耗（实测与 UI 一致，
@@ -31,8 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from wb_openapi_fetch import build_data as _openapi_build_data
 
 ENT = "fzrv66luc6ww"
-# 技能包可移植：数据目录可用环境变量覆盖（默认用户本机工作区）
-BASE = os.environ.get("WB_OPS_BASE", "/Users/ajiang/Documents/AIWork/WorkBuddy/SM工作日常")
+BASE = "/Users/ajiang/Documents/AIWork/WorkBuddy/SM工作日常"
 HTML = os.path.join(BASE, "outputs", "个人日常工作台.html")
 LATEST = os.path.join(BASE, "outputs", "wb_ops_latest.json")
 HIST = os.path.join(BASE, "outputs", "wb_ops_history.json")
@@ -384,7 +385,10 @@ def detail_seat(data):
     left = lic.get("remaining")
     auth = mb.get("authorized")
     un = mb.get("unauthorized")
-    idle = [m for m in allm if (m.get("u") or 0) == 0]      # 已分配但零用量
+    # 已分配但零用量 —— 口径与「未启用」KPI 统一：unused3.never
+    # （积分 0 **且**无请求记录；只用免费模型的人有请求，不算未启用）
+    _never = {x.get("n") for x in ((data.get("unused3") or {}).get("never") or [])}
+    idle = [m for m in allm if m.get("n") in _never]
     active = len(allm) - len(idle)                          # 已分配且用过
     pct = used * 100.0 / total if total else 0
 
@@ -641,7 +645,10 @@ def detail_unused(data):
             + '<div class="dgrid">'
             + card("口径说明", "和「席位剩余」不是一回事",
                    '<ul class="plain">'
-                   '<li>未启用 = 已分配席位、但本周期 <code>totalUsed = 0</code> 的成员。</li>'
+                   '<li>未启用 = 已分配席位、本周期 <code>totalUsed = 0</code> '
+                   '<b>且无任何请求记录</b> 的成员。</li>'
+                   '<li>说明：<code>hy3</code> / <code>step-5-preview</code> 等模型完全免费不扣积分，'
+                   '只用免费模型的人有请求但积分为 0，<b>不算未启用</b>（按请求记录甄别）。</li>'
                    '<li>席位剩余 = <b>尚未分配出去的空席位</b>（当前 %s 个）；'
                    '两者不重叠：一个是「占着席位没用」，一个是「空着没人」。</li>'
                    '<li>统计周期 %s，接口 <code>usage/member/list</code>。</li>'
