@@ -18,14 +18,20 @@ description: 通过 WorkBuddy 企业 OpenAPI（pt_ Key，纯后台 HTTP）抓取
 - 核心接口：
   - `GET /license`（席位）
   - `GET /openapi/resources/overview`（积分池）
-  - `GET /openapi/usage/default-quota`（每人 2000）
+  - `GET /openapi/usage/default-quota`（每人周期额度，**以接口返回值为准**，管理员会调整：
+    2026-10-28 起由 2000 上调至 5000，超限名单随之从 9 人降到 1 人）
   - `GET /openapi/members`（pageSize≤200）
   - `POST /openapi/usage/members/query`（**必传 userIds**，totalUsed **忽略 timeRange=周期总量**）
   - `POST /openapi/usage/members/detail`（**version:2**，timeRange≤31 天，nextPageToken 翻页，含 departmentInfo.fullPath）
 - ⚠️ 每日用量**不能**靠 members/query 切片（它永远返回周期总量）；必须靠 members/detail 按 usageTime 聚合。
 - ⚠️ 成员含系统账号 `service-account-*`，需剔除。
+- ⭐ **模型单价（2026-10-28/29 实测，按单次均价）**：只有 **`hy3` 是真·完全免费**（两天 144/147 次均 0 积分）。
+  ⚠️ 别再以为 `step-5-preview` 免费——实测 58.8 / 34.1 每次，属于最贵一档。
+  昂贵档：`kimi-k3.1-highspeed` 345、`glm-5.3` 51~137、`kimi-k3.1-pro` 47~119、`step-5-preview` 34~59、`space-bunny` 24~26。
+  平价档：`deepseek-v4.1-flash` 3.8、`glm-5.3-flash` 5.3、`hy-image3.5-preview` 5.7。
+  主力 `hy4-preview` 15.9~19.5 —— 用得最多，但成本主要来自「把贵模型当默认 + 单次上下文太重」。
 - ⚠️⭐ **「未启用」口径**：= 周期积分 0 **且无任何请求记录**。**不能只看积分**——
-  `hy3` / `step-5-preview` 等模型完全免费不扣积分，只用免费模型的人 requests>0 但 credit=0，
+  完全免费的模型（实测只有 `hy3`）不扣积分，只用它的成员 requests>0 但 credit=0，
   按积分判会被误判成未启用（真实案例：李鑫 10 条请求全 hy3）。
   `build_data()` 已拉全量 detail，用 `detail_req_days()` 统计每人请求数即可甄别，无需额外请求。
   detail 游标可能漏记个别轻量成员 → 「有请求」可放心用于**排除**，「无请求」仍作兜底。
